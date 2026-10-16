@@ -1,20 +1,21 @@
 package io.cloudNativeData.account.integration;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.gemfire.GemfireTemplate;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.Pollers;
+import org.springframework.integration.gemfire.outbound.CacheWritingMessageHandler;
 import org.springframework.integration.jdbc.dsl.Jdbc;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Configuration
 @Slf4j
@@ -29,6 +30,12 @@ public class IntegrationConfig {
     @Value("${app.sql.update}")
     private String updateSQL;
 
+    @Value("${app.inbound.select.fixed.delay.ms:1000}")
+    private long inboundSelectFixedDelayMs;
+
+    @Value("${app.gemfire.key.field.name:id}")
+    private String keyFieldName;
+
     @Bean
     public PlatformTransactionManager transactionManager(
             DataSource dataSource) {
@@ -38,8 +45,7 @@ public class IntegrationConfig {
     @Bean
     public IntegrationFlow gemFireInboundFlow(
             DataSource dataSource,
-            @Qualifier("itemsTemplate")
-            GemfireTemplate gemfireTemplate,
+            CacheWritingMessageHandler cacheWritingMessageHandler,
             PlatformTransactionManager transactionManager) {
 
         return IntegrationFlow
@@ -50,15 +56,15 @@ public class IntegrationConfig {
                                 .updateSql(
                                         updateSQL),
                         endpoint -> endpoint.poller(
-                                Pollers.fixedDelay(1000)
+                                Pollers.fixedDelay(inboundSelectFixedDelayMs)
                                         .transactional(transactionManager)))
-                .split()
-                .handle((Map<Object, Object> item,
-                         MessageHeaders headers) -> {
-                    log.info("Saving item: {}", item);
-                    gemfireTemplate.put(item.get("id"),item);
-                    return null;
-                })
+                .transform((List<Map<Object, Object>> payload) ->
+                        payload.stream()
+                                .collect(Collectors.toMap(
+                                        item -> item.get(keyFieldName),
+                                        HashMap::new
+                                )))
+                .handle(cacheWritingMessageHandler)
                 .get();
     }
 }

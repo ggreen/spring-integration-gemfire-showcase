@@ -7,6 +7,11 @@ deployments/local/scripts/gemfire/start.sh
 ```
 
 
+```shell
+$GEMFIRE_HOME/bin/gfsh
+```
+
+
 Create Region
 
 ```shell
