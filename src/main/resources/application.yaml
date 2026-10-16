@@ -1,0 +1,17 @@
+server:
+  port: 6007
+spring:
+  application:
+    name: location-service
+  data:
+    gemfire:
+      pool.default.locators: localhost[10334]
+app:
+  sql:
+    select: "SELECT id, name, status 
+          FROM item
+          WHERE status = 2
+          ORDER BY id
+          LIMIT 500"
+    update: "UPDATE item SET status = 10 
+            WHERE id IN (:id)"
