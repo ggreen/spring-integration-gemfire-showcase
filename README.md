@@ -15,71 +15,77 @@ $GEMFIRE_HOME/bin/gfsh
 Create Region
 
 ```shell
-$GEMFIRE_HOME/bin/gfsh -e "connect" -e "connect"  -e "create region --name=Items --type=PARTITION --enable-statistics=true"
+$GEMFIRE_HOME/bin/gfsh -e "connect" -e "connect"  -e "create region --name=Employee --type=PARTITION --enable-statistics=true"
 ```
 
-run mySQL
+Start mySQL
 
 ```shell
 podman run -it --rm \
   --name mysql \
   --publish 3306:3306 \
-  --volume mysql-data:/var/lib/mysql \
   -e MYSQL_ROOT_PASSWORD='CHANGEME' \
   -e MYSQL_DATABASE='appdb' \
   mysql:latest
 ```
 
 
-CLI
+Start MySQL CLI
 
 ```shell
 podman exec -it mysql mysql -u root -pCHANGEME appdb
 ```
 
+Create Schema and Table 
 
 ```sql
--- Drop table if it already exists to ensure a clean setup
-DROP TABLE IF EXISTS item;
+-- Create schema if it does not exist
+CREATE SCHEMA IF NOT EXISTS company;
 
--- Create the item table matching the Spring Integration adapter fields
-CREATE TABLE item (
-    id INT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(100) NOT NULL,
-    status INT NOT NULL DEFAULT 2,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    INDEX idx_item_status (status) -- Added index to optimize the adapter's polling query
+-- Drop table if it already exists in the company schema
+DROP TABLE IF EXISTS company.employees;
+
+-- Create the employees table in the company schema
+CREATE TABLE company.employees (
+                                  id INT NOT NULL AUTO_INCREMENT,
+                                  first_name VARCHAR(50) NOT NULL,
+                                  last_name VARCHAR(50) NOT NULL,
+                                  email VARCHAR(100) NOT NULL,
+                                  department VARCHAR(50) NOT NULL,
+                                  status INT NOT NULL DEFAULT 2,
+                                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                  PRIMARY KEY (id),
+                                  INDEX idx_employees_status (status) -- Added index to optimize the adapter's polling query
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
 
 ```sql
 -- Clear old test records
-TRUNCATE TABLE item;
+TRUNCATE TABLE company.employees;
 
--- Insert records with status = 2 (Ready to be polled by Spring Integration)
-INSERT INTO item (name, status) VALUES 
-('Laptop Stand', 2),
-('USB-C Cable', 2),
-('Mechanical Keyboard', 2);
+INSERT INTO company.employees (first_name, last_name, email, department, status) VALUES
+('Alice', 'Smith', 'alice.smith@example.com', 'Engineering', 2),
+('Bob', 'Jones', 'bob.jones@example.com', 'Marketing', 2),
+('Charlie', 'Brown', 'charlie.brown@example.com', 'Finance', 2);
 
--- Insert records with other status values (Will be ignored by 'where status=2')
-INSERT INTO item (name, status) VALUES 
-('Wireless Mouse', 1),   -- Pending review
-('Monitors', 10),        -- Already processed
-('Gaming Chair', 0);     -- Inactive
+INSERT INTO company.employees (first_name, last_name, email, department, status) VALUES
+('Diana', 'Prince', 'diana.prince@example.com', 'HR', 2),         
+('Evan', 'Wright', 'evan.wright@example.com', 'Sales', 2),       
+('Fiona', 'Gallagher', 'fiona.g@example.com', 'Operations', 2);  
 
 -- Verify inserted data
-SELECT id, name, status, created_at FROM item WHERE status = 2;
+SELECT id, first_name, last_name, email, department, status, created_at
+FROM company.employees
+WHERE status = 2;
 ```
 
 
 ```sql
-update item set status = 2;
+update company.employees set status = 2;
 ```
 
 ```gfsh
-query --query="select value.get('name') from /Items.entries"
+query --query="select value from /Employee.entries"
 ```

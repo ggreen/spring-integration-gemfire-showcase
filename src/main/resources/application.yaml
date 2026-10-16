@@ -7,9 +7,16 @@ spring:
     gemfire:
       pool.default.locators: localhost[10334]
 integration:
-  sqlSelect: "SELECT id, name, status  
-           FROM item WHERE status = 2
-           ORDER BY id
-          LIMIT 500"
-  sqlUpdate: "UPDATE item SET status = 10 
+  sqlSelect: "
+            SELECT id, 
+                first_name as firstName,
+                last_name as lastName, 
+                email,
+                department,
+                created_at,
+                status  
+            FROM company.employees WHERE status = 2
+            ORDER BY id
+            LIMIT 500"
+  sqlUpdate: "UPDATE company.employees SET status = 10 
             WHERE id IN (:id)"

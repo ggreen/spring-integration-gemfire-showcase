@@ -18,19 +18,19 @@ import java.util.Map;
 @EnablePdx
 public class GemFireConf
 {
-    @Bean("Items")
-    ClientRegionFactoryBean<String, Map<Object,Object>> items(ClientCache gemFireCache)
+    @Bean("Employee")
+    ClientRegionFactoryBean<String, Map<Object,Object>> employee(ClientCache gemFireCache)
     {
         var bean = new ClientRegionFactoryBean<String, Map<Object,Object>>();
         bean.setCache(gemFireCache);
-        bean.setName("Items");
+        bean.setName("Employee");
         bean.setDataPolicy(DataPolicy.EMPTY);
         return bean;
     }
 
     @Bean
     CacheWritingMessageHandler cacheWritingMessageHandler(
-            @Qualifier("itemsTemplate") GemfireTemplate gemfireTemplate)
+            @Qualifier("employeeTemplate") GemfireTemplate gemfireTemplate)
     {
         return new CacheWritingMessageHandler(gemfireTemplate.getRegion());
     }
