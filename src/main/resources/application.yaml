@@ -2,7 +2,7 @@ server:
   port: 6007
 spring:
   application:
-    name: location-service
+    name: account-gemfire-integration
   data:
     gemfire:
       pool.default.locators: localhost[10334]
