@@ -1,7 +1,8 @@
 package io.cloudNativeData.account.integration;
 
+import io.cloudNativeData.account.integration.properties.IntegrationProperties;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.dsl.IntegrationFlow;
@@ -19,22 +20,8 @@ import java.util.stream.Collectors;
 
 @Configuration
 @Slf4j
+@EnableConfigurationProperties(IntegrationProperties.class)
 public class IntegrationConfig {
-
-    @Value("${app.batch.size:500}")
-    private int batchSize;
-
-    @Value("${app.sql.select}")
-    private String selectQuery;
-
-    @Value("${app.sql.update}")
-    private String updateSQL;
-
-    @Value("${app.inbound.select.fixed.delay.ms:1000}")
-    private long inboundSelectFixedDelayMs;
-
-    @Value("${app.gemfire.key.field.name:id}")
-    private String keyFieldName;
 
     @Bean
     public PlatformTransactionManager transactionManager(
@@ -46,22 +33,23 @@ public class IntegrationConfig {
     public IntegrationFlow gemFireInboundFlow(
             DataSource dataSource,
             CacheWritingMessageHandler cacheWritingMessageHandler,
-            PlatformTransactionManager transactionManager) {
+            PlatformTransactionManager transactionManager,
+            IntegrationProperties properties) {
 
         return IntegrationFlow
                 .from(
                         Jdbc.inboundAdapter(
                                         dataSource,
-                                        selectQuery)
+                                        properties.getSqlSelect())
                                 .updateSql(
-                                        updateSQL),
+                                        properties.getSqlUpdate()),
                         endpoint -> endpoint.poller(
-                                Pollers.fixedDelay(inboundSelectFixedDelayMs)
+                                Pollers.fixedDelay(properties.getInboundSelectFixedDelayMs())
                                         .transactional(transactionManager)))
                 .transform((List<Map<Object, Object>> payload) ->
                         payload.stream()
                                 .collect(Collectors.toMap(
-                                        item -> item.get(keyFieldName),
+                                        item -> item.get(properties.getKeyFieldName()),
                                         HashMap::new
                                 )))
                 .handle(cacheWritingMessageHandler)

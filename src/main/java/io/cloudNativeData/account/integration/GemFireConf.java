@@ -9,7 +9,6 @@ import org.springframework.data.gemfire.GemfireTemplate;
 import org.springframework.data.gemfire.client.ClientRegionFactoryBean;
 import org.springframework.data.gemfire.config.annotation.ClientCacheApplication;
 import org.springframework.data.gemfire.config.annotation.EnablePdx;
-import org.springframework.data.gemfire.repository.config.EnableGemfireRepositories;
 import org.springframework.integration.gemfire.outbound.CacheWritingMessageHandler;
 
 import java.util.Map;
@@ -17,7 +16,6 @@ import java.util.Map;
 @ClientCacheApplication
 @Configuration
 @EnablePdx
-@EnableGemfireRepositories
 public class GemFireConf
 {
     @Bean("Items")
