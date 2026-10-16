@@ -1,5 +1,6 @@
 package io.cloudNativeData.account.integration;
 
+import io.cloudNativeData.account.integration.properties.IntegrationProperties;
 import org.apache.geode.cache.DataPolicy;
 import org.apache.geode.cache.client.ClientCache;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -18,19 +19,19 @@ import java.util.Map;
 @EnablePdx
 public class GemFireConf
 {
-    @Bean("Employee")
-    ClientRegionFactoryBean<String, Map<Object,Object>> employee(ClientCache gemFireCache)
+    @Bean("Region")
+    ClientRegionFactoryBean<String, Map<Object,Object>> region(ClientCache gemFireCache, IntegrationProperties integrationProperties)
     {
         var bean = new ClientRegionFactoryBean<String, Map<Object,Object>>();
         bean.setCache(gemFireCache);
-        bean.setName("Employee");
+        bean.setRegionName(integrationProperties.getRegionName());
         bean.setDataPolicy(DataPolicy.EMPTY);
         return bean;
     }
 
     @Bean
     CacheWritingMessageHandler cacheWritingMessageHandler(
-            @Qualifier("employeeTemplate") GemfireTemplate gemfireTemplate)
+            @Qualifier("regionTemplate") GemfireTemplate gemfireTemplate)
     {
         return new CacheWritingMessageHandler(gemfireTemplate.getRegion());
     }

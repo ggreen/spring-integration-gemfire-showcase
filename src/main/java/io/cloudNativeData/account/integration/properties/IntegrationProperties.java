@@ -15,4 +15,5 @@ public class IntegrationProperties {
     private String sqlUpdate;
     private long inboundSelectFixedDelayMs = 1000;
     private String keyFieldName = "id";
+    private String regionName;
 }

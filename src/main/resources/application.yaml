@@ -20,3 +20,4 @@ integration:
             LIMIT 500"
   sqlUpdate: "UPDATE company.employees SET status = 10 
             WHERE id IN (:id)"
+  regionName: "Employee"
